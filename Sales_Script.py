@@ -26,7 +26,13 @@ if all(uploaded_files.values()):
         st.success(f"{name} loaded with {dfs[name].shape[0]} rows")
 # Now you have all the dataframes loaded from their respective files
 
-        import pandas as pd
+        df_8223 = dfs['M3-8223']
+        df_8224 = dfs['SAP-8224']
+        df_8235 = dfs['SAP-8235']
+        df_8225 = dfs['SAP-8225']
+        df_8229 = dfs['SAP-8229']
+        df_8236 = dfs['M3-8236']
+        df_Aurora = dfs['Aurora-8226-8297']
 
         # Assuming df_Aurora is your DataFrame
 
