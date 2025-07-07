@@ -1,44 +1,32 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from io import BytesIO
-import streamlit as st
-import pandas as pd
-import numpy as np
-from io import BytesIO
 
-st.set_page_config(layout="wide")
+st.title("Sales Data Consolidation App")
 
-st.title("📊 Sales Consolidator App")
+st.markdown("### Upload Required Excel Files")
 
-# Upload all required Excel files
 uploaded_files = {
-    "SAP-8235": st.file_uploader("Upload SAP-8235 Excel", type=["xlsx"]),
-    "M3-8223": st.file_uploader("Upload M3-8223 Excel", type=["xlsx"]),
-    "SAP-8224": st.file_uploader("Upload SAP-8224 Excel", type=["xlsx"]),
-    "SAP-8225": st.file_uploader("Upload SAP-8225 Excel", type=["xlsx"]),
-    "SAP-8229": st.file_uploader("Upload SAP-8229 Excel", type=["xlsx"]),
-    "M3-8236": st.file_uploader("Upload M3-8236 Excel", type=["xlsx"]),
-    "Aurora-8226-8297": st.file_uploader("Upload Aurora-8226-8297 Excel", type=["xlsx"]),
+    "SAP-8235": st.file_uploader("Upload file for SAP-8235", type="xlsx"),
+    "M3-8223": st.file_uploader("Upload file for M3-8223", type="xlsx"),
+    "SAP-8224": st.file_uploader("Upload file for SAP-8224", type="xlsx"),
+    "SAP-8225": st.file_uploader("Upload file for SAP-8225", type="xlsx"),
+    "SAP-8229": st.file_uploader("Upload file for SAP-8229", type="xlsx"),
+    "M3-8236": st.file_uploader("Upload file for M3-8236", type="xlsx"),
+    "Aurora-8226-8297": st.file_uploader("Upload file for Aurora-8226-8297", type="xlsx"),
 }
 
-if all(uploaded_files.values()):
-    # Load files into DataFrames
-    dfs = {}
-    for name, file in uploaded_files.items():
-        dfs[name] = pd.read_excel(file, sheet_name="Sheet1")
-        st.success(f"{name} loaded with {dfs[name].shape[0]} rows")
-    
-    # Assigning DataFrames for easier access
-    df_8223 = dfs['M3-8223']
-    df_8224 = dfs['SAP-8224']
-    df_8235 = dfs['SAP-8235']
-    df_8225 = dfs['SAP-8225']
-    df_8229 = dfs['SAP-8229']
-    df_8236 = dfs['M3-8236']
-    df_Aurora = dfs['Aurora-8226-8297']
 
-    # Assuming df_Aurora is your DataFrame
+if all(uploaded_files.values()):
+    df_8235 = pd.read_excel(uploaded_files["SAP-8235"], sheet_name='Sheet1')
+    df_8223 = pd.read_excel(uploaded_files["M3-8223"], sheet_name='Sheet1')
+    df_8224 = pd.read_excel(uploaded_files["SAP-8224"], sheet_name='Sheet1')
+    df_8225 = pd.read_excel(uploaded_files["SAP-8225"], sheet_name='Sheet1')
+    df_8229 = pd.read_excel(uploaded_files["SAP-8229"], sheet_name='Sheet1')
+    df_8236 = pd.read_excel(uploaded_files["M3-8236"], sheet_name='Sheet1')
+    df_Aurora = pd.read_excel(uploaded_files["Aurora-8226-8297"], sheet_name='Sheet1')
+
+
 
     # Convert the 'Document Date' and 'Accounting Date' columns to datetime
     df_Aurora['Document Date'] = pd.to_datetime(df_Aurora['Document Date'])
@@ -57,7 +45,7 @@ if all(uploaded_files.values()):
     df_Aurora['Country Code'] = df_Aurora['Party State'].str[:2]
     #df_Aurora = df_Aurora.drop(["Goods/Service"],axis=1)
 
-    import pandas as pd
+    
 
     df_8236['Entity'] = df_8236['Company Code'].map({'PU1': '8223'}).fillna('8236')
     df_8236['ERP'] = 'M3'
@@ -74,7 +62,7 @@ if all(uploaded_files.values()):
     df_8236['Goods/Service'] = df_8236['New - Goods/Service'].map({'GOODS': 'Goods'}).fillna('Service')
     df_8236 = df_8236.drop(['New - Goods/Service', 'Customer Bill City'], axis=1)
 
-    import pandas as pd
+    
 
     df_8229['ERP'] = 'SAP SMART'
     df_8229['Accounting Pos Date'] = pd.to_datetime(df_8229['Accounting Pos Date'])
@@ -92,7 +80,7 @@ if all(uploaded_files.values()):
     df_8229['TCSG AMT'] = df_8229['TCSG AMT'] * df_8229['Document type'].map({'Credit Note': -1}).fillna(1)
     df_8229 = df_8229.drop('Document Type', axis=1)
 
-    import pandas as pd
+    
 
     df_8225['ERP'] = 'SAP SMART'
     df_8225['Billing Date'] = pd.to_datetime(df_8225['Billing Date'])
@@ -438,11 +426,9 @@ if all(uploaded_files.values()):
     df_8225 = processed_dfs[4]
     df_8229 = processed_dfs[5]
     df_8236 = processed_dfs[1]
-    import pandas as pd
-    import streamlit as st
-    from io import BytesIO
+    import io
 
-    # Simulate final DataFrames after transformation
+    # Prepare individual sheets
     dfs = {
         '8235': df_8235,
         '8236': df_8236,
@@ -453,31 +439,26 @@ if all(uploaded_files.values()):
         'Aurora': df_Aurora
     }
 
-    # Show message while transforming
-    st.info("Transforming data...")
+    # Write to an in-memory buffer
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        for sheet_name, df in dfs.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-    # Combine all into one DataFrame
-    all_data = pd.concat(dfs.values(), ignore_index=True)
+    # Combine all into a single DataFrame for consolidated sheet
+    df_all = pd.concat(list(dfs.values()), ignore_index=True)
 
-    # Preview top 10 rows
-    st.dataframe(all_data.head(10))
+    # Add the consolidated sheet
+    with pd.ExcelWriter(output, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        df_all.to_excel(writer, sheet_name='Consolidated', index=False)
 
-    # Function to export multiple sheets to Excel in memory
-    def to_excel(df_dict):
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            for sheet_name, df in df_dict.items():
-                df.to_excel(writer, index=False, sheet_name=sheet_name)
-        output.seek(0)
-        return output
+    output.seek(0)
 
-    # Get Excel binary
-    excel_data = to_excel(dfs)
-
-    # Download button
+    # Streamlit download button
+    st.markdown("### Download Consolidated Excel File")
     st.download_button(
-        label="📥 Download Consolidated Excel",
-        data=excel_data,
+        label="Download Excel File",
+        data=output,
         file_name="consolidated_sales_data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
