@@ -2,3 +2,4 @@ Streamlit
 Pandas
 Openpyxl
 numpy
+python-docx
