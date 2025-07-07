@@ -15,7 +15,7 @@ try:
             full_text.append(para.text)
         return "\n".join(full_text)
 
-    note_content = read_docx("note.docx")  # replace 'note.docx' with your file name
+    note_content = read_docx("SalesRegisterSOP.docx") 
     st.text_area("Note Content", note_content, height=300)
 except Exception as e:
     st.error(f"Failed to load note.docx: {e}")
